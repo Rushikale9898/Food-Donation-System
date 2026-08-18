@@ -18,21 +18,34 @@ public class DashboardController {
 
 	private final DashboardService dashboardService;
 
+	@GetMapping("/admin")
+	@Operation(summary = "Admin dashboard stats")
+	public ResponseEntity<ApiResponse<DashboardStatsResponse>> adminDashboard() {
+		return ResponseEntity.ok(ApiResponse.success(dashboardService.getAdminDashboard()));
+	}
+
 	@GetMapping("/donor")
-	@Operation(summary = "Get donor dashboard statistics")
+	@Operation(summary = "Donor dashboard stats — includes regular + direct donations")
 	public ResponseEntity<ApiResponse<DashboardStatsResponse>> donorDashboard(Authentication auth) {
 		return ResponseEntity.ok(ApiResponse.success(dashboardService.getDonorDashboard(auth.getName())));
 	}
 
 	@GetMapping("/ngo")
-	@Operation(summary = "Get NGO dashboard statistics")
+	@Operation(summary = "NGO dashboard stats")
 	public ResponseEntity<ApiResponse<DashboardStatsResponse>> ngoDashboard(Authentication auth) {
 		return ResponseEntity.ok(ApiResponse.success(dashboardService.getNgoDashboard(auth.getName())));
 	}
 
 	@GetMapping("/agent")
-	@Operation(summary = "Get delivery agent dashboard statistics")
+	@Operation(summary = "Delivery agent dashboard stats")
 	public ResponseEntity<ApiResponse<DashboardStatsResponse>> agentDashboard(Authentication auth) {
 		return ResponseEntity.ok(ApiResponse.success(dashboardService.getAgentDashboard(auth.getName())));
+	}
+
+	// ← NEW: receiver dashboard endpoint
+	@GetMapping("/receiver")
+	@Operation(summary = "Receiver dashboard stats")
+	public ResponseEntity<ApiResponse<DashboardStatsResponse>> receiverDashboard(Authentication auth) {
+		return ResponseEntity.ok(ApiResponse.success(dashboardService.getReceiverDashboard(auth.getName())));
 	}
 }

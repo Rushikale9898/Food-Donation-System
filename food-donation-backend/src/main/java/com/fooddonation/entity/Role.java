@@ -57,5 +57,6 @@ public class Role {
 	public static final String DONOR = "ROLE_DONOR";
 	public static final String NGO = "ROLE_NGO";
 	public static final String DELIVERY_AGENT = "ROLE_DELIVERY_AGENT";
+	public static final String RECEIVER = "ROLE_RECEIVER";
 
 }

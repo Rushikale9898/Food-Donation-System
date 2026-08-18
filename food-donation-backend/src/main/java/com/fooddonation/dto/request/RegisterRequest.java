@@ -1,6 +1,8 @@
 package com.fooddonation.dto.request;
 
 import com.fooddonation.enums.DonorType;
+import com.fooddonation.enums.ReceiverType;
+import com.fooddonation.enums.VehicleType;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -47,13 +49,24 @@ public class RegisterRequest {
 	private String organizationName;
 	private String registrationNumber;
 	private String description;
+	private Integer foodCapacity;
+	private String serviceArea;
 
 	// For Donor
 	private DonorType donorType;
 	private String organization;
+	private String fssaiNumber;
 
 	// For Delivery Agent
-	private String vehicleType;
+	private VehicleType vehicleType;
 	private String vehicleNumber;
+	private String licenseNumber;
+
+	// ── Receiver fields ───────────────────────────────────────
+	private ReceiverType receiverType; // INDIVIDUAL | FAMILY | ORPHANAGE | OLD_AGE_HOME | SHELTER | OTHER
+	private Integer familySize;
+	private String specialNeeds;
+	private String idProofType;
+	private String idProofNumber;
 
 }

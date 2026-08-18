@@ -20,10 +20,12 @@ import com.fooddonation.dto.response.AuthResponse;
 import com.fooddonation.entity.DeliveryAgentProfile;
 import com.fooddonation.entity.DonorProfile;
 import com.fooddonation.entity.NgoProfile;
+import com.fooddonation.entity.ReceiverProfile;
 import com.fooddonation.entity.RefreshToken;
 import com.fooddonation.entity.Role;
 import com.fooddonation.entity.User;
 import com.fooddonation.enums.DonorType;
+import com.fooddonation.enums.ReceiverType;
 import com.fooddonation.enums.UserStatus;
 import com.fooddonation.enums.VehicleType;
 import com.fooddonation.exception.BadRequestException;
@@ -33,6 +35,7 @@ import com.fooddonation.exception.UnauthorizedException;
 import com.fooddonation.repository.DeliveryAgentProfileRepository;
 import com.fooddonation.repository.DonorProfileRepository;
 import com.fooddonation.repository.NgoProfileRepository;
+import com.fooddonation.repository.ReceiverProfileRepository;
 import com.fooddonation.repository.RefreshTokenRepository;
 import com.fooddonation.repository.RoleRepository;
 import com.fooddonation.repository.UserRepository;
@@ -54,6 +57,7 @@ public class AuthServiceImpl implements AuthService {
 	private final DonorProfileRepository donorProfileRepository;
 	private final NgoProfileRepository ngoProfileRepository;
 	private final DeliveryAgentProfileRepository agentProfileRepository;
+	private final ReceiverProfileRepository receiverProfileRepository; // NEW
 	private final AuthenticationManager authenticationManager;
 	private final JwtUtils jwtUtils;
 	private final PasswordEncoder passwordEncoder;
@@ -68,37 +72,47 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	@Transactional
 	public AuthResponse register(RegisterRequest request) {
+
+		// ── Duplicate checks ──────────────────────────────────
 		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new ConflictException("An account with this email already exists");
 		}
-
 		if (request.getPhone() != null && userRepository.existsByPhone(request.getPhone())) {
 			throw new ConflictException("Phone number is already registered");
 		}
 
+		// ── Resolve role name ─────────────────────────────────
 		String roleName = switch (request.getRole().toUpperCase()) {
 		case "DONOR" -> Role.DONOR;
 		case "NGO" -> Role.NGO;
 		case "DELIVERY_AGENT" -> Role.DELIVERY_AGENT;
-		default -> throw new BadRequestException("Invalid role. Choose DONOR, NGO, or DELIVERY_AGENT");
+		case "RECEIVER" -> Role.RECEIVER; // ← NEW
+		default -> throw new BadRequestException("Invalid role. Choose DONOR, NGO, DELIVERY_AGENT, or RECEIVER");
 		};
 
 		Role role = roleRepository.findByName(roleName)
 				.orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));
 
+		// ── Build user ────────────────────────────────────────
+		// Donors and Receivers are activated immediately.
+		// NGO and Delivery Agents remain PENDING until admin approves.
+		UserStatus initialStatus = (roleName.equals(Role.DONOR) || roleName.equals(Role.RECEIVER)) ? UserStatus.ACTIVE
+				: UserStatus.PENDING;
+
 		User user = User.builder().fullName(request.getFullName()).email(request.getEmail()).phone(request.getPhone())
 				.password(passwordEncoder.encode(request.getPassword())).city(request.getCity())
-				.state(request.getState()).address(request.getAddress()).status(UserStatus.PENDING).emailVerified(false)
+				.state(request.getState()).address(request.getAddress()).status(initialStatus).emailVerified(false)
 				.emailVerifyToken(UUID.randomUUID().toString()).build();
 
 		user.getRoles().add(role);
 		User savedUser = userRepository.save(user);
 
-		// Create role-specific profiles
+		// ── Create role-specific profile ──────────────────────
 		createRoleProfile(savedUser, request, roleName);
 
 		log.info("New user registered: {} with role: {}", request.getEmail(), roleName);
 
+		// ── Generate tokens and return ────────────────────────
 		String accessToken = jwtUtils.generateToken(savedUser);
 		String refreshTokenStr = createRefreshToken(savedUser);
 
@@ -181,7 +195,6 @@ public class AuthServiceImpl implements AuthService {
 		user.setPasswordResetExpiry(null);
 		userRepository.save(user);
 
-		// Invalidate all refresh tokens
 		refreshTokenRepository.revokeAllByUserId(user.getId());
 		log.info("Password reset successful for: {}", user.getEmail());
 	}
@@ -200,16 +213,20 @@ public class AuthServiceImpl implements AuthService {
 		userRepository.save(user);
 	}
 
-	// ===== Private helpers =====
+	// ─────────────────────────────────────────────────────────
+	// PRIVATE HELPERS
+	// ─────────────────────────────────────────────────────────
 
 	private void createRoleProfile(User user, RegisterRequest request, String roleName) {
 		switch (roleName) {
+
 		case Role.DONOR -> {
 			DonorProfile profile = DonorProfile.builder().user(user)
 					.donorType(request.getDonorType() != null ? request.getDonorType() : DonorType.INDIVIDUAL)
 					.organization(request.getOrganization()).totalDonated(0).build();
 			donorProfileRepository.save(profile);
 		}
+
 		case Role.NGO -> {
 			if (request.getOrganizationName() == null || request.getOrganizationName().isBlank()) {
 				throw new BadRequestException("Organization name is required for NGO registration");
@@ -219,18 +236,31 @@ public class AuthServiceImpl implements AuthService {
 					.verified(false).build();
 			ngoProfileRepository.save(profile);
 		}
+
 		case Role.DELIVERY_AGENT -> {
 			VehicleType vehicleType = VehicleType.BIKE;
 			if (request.getVehicleType() != null) {
-				try {
-					vehicleType = VehicleType.valueOf(request.getVehicleType().toUpperCase());
-				} catch (IllegalArgumentException ignored) {
-				}
+				vehicleType = request.getVehicleType(); // already a VehicleType enum
 			}
 			DeliveryAgentProfile profile = DeliveryAgentProfile.builder().user(user).vehicleType(vehicleType)
 					.vehicleNumber(request.getVehicleNumber()).isAvailable(true).totalDeliveries(0).build();
 			agentProfileRepository.save(profile);
 		}
+
+		// ── NEW: Receiver ─────────────────────────────────
+		case Role.RECEIVER -> {
+			ReceiverType receiverType = ReceiverType.INDIVIDUAL;
+			if (request.getReceiverType() != null) {
+				receiverType = request.getReceiverType(); // already a ReceiverType enum
+			}
+			ReceiverProfile profile = ReceiverProfile.builder().user(user).receiverType(receiverType)
+					.familySize(request.getFamilySize()).specialNeeds(request.getSpecialNeeds())
+					.idProofType(request.getIdProofType()).idProofNumber(request.getIdProofNumber()).isVerified(false)
+					.totalReceived(0).build();
+			receiverProfileRepository.save(profile);
+			log.info("Receiver profile created for user: {}", user.getEmail());
+		}
+
 		default -> log.warn("No profile creation logic for role: {}", roleName);
 		}
 	}

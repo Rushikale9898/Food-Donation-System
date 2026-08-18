@@ -28,8 +28,8 @@ public interface FoodDonationRepository extends JpaRepository<FoodDonation, Long
 			Pageable pageable);
 
 	@Query("SELECT d FROM FoodDonation d WHERE d.status IN :statuses AND " + "(:q IS NULL OR :q = '' OR "
-			+ "LOWER(d.title) LIKE LOWER(CONCAT('%',:q,'%')) OR "
-			+ "LOWER(d.description) LIKE LOWER(CONCAT('%',:q,'%'))) AND "
+			+ " LOWER(d.title) LIKE LOWER(CONCAT('%',:q,'%')) OR "
+			+ " LOWER(d.description) LIKE LOWER(CONCAT('%',:q,'%'))) AND "
 			+ "(:city IS NULL OR LOWER(d.pickupCity) = LOWER(:city)) AND "
 			+ "(:categoryId IS NULL OR d.category.id = :categoryId) AND "
 			+ "(:foodType IS NULL OR d.foodType = :foodType)")
@@ -37,13 +37,15 @@ public interface FoodDonationRepository extends JpaRepository<FoodDonation, Long
 			@Param("city") String city, @Param("categoryId") Long categoryId, @Param("foodType") FoodType foodType,
 			Pageable pageable);
 
-	@Query("SELECT d FROM FoodDonation d WHERE d.status = com.fooddonation.enums.DonationStatus.APPROVED AND d.expiresAt < :now")
+	@Query("SELECT d FROM FoodDonation d WHERE d.status = 'APPROVED' AND d.expiresAt < :now")
 	List<FoodDonation> findExpiredDonations(@Param("now") LocalDateTime now);
 
-	// Stats
 	long countByStatus(DonationStatus status);
 
 	long countByDonorId(Long donorId);
+
+	// ← NEW: needed for donor dashboard breakdown per status
+	long countByDonorIdAndStatus(Long donorId, DonationStatus status);
 
 	@Query("SELECT COUNT(d) FROM FoodDonation d WHERE d.createdAt >= :from")
 	long countSince(@Param("from") LocalDateTime from);
@@ -55,9 +57,4 @@ public interface FoodDonationRepository extends JpaRepository<FoodDonation, Long
 			+ "FROM FoodDonation d WHERE FUNCTION('YEAR', d.createdAt) = :year "
 			+ "GROUP BY FUNCTION('MONTH', d.createdAt) ORDER BY month")
 	List<Object[]> getMonthlyStats(@Param("year") int year);
-
-	@Query("SELECT d FROM FoodDonation d WHERE d.status = 'APPROVED' AND d.expiresAt > :now "
-			+ "AND d.pickupCity = :city ORDER BY d.expiresAt ASC")
-	List<FoodDonation> findNearbyAvailable(@Param("city") String city, @Param("now") LocalDateTime now,
-			Pageable pageable);
 }
