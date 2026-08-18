@@ -4,83 +4,80 @@ import {
   MagnifyingGlassIcon, TruckIcon, UsersIcon, BellIcon,
   UserCircleIcon, ArrowLeftOnRectangleIcon, HeartIcon,
   ChartBarIcon, TagIcon, ChatBubbleLeftRightIcon,
-  DocumentChartBarIcon, IdentificationIcon,
+  DocumentChartBarIcon, IdentificationIcon, GiftIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 
 const NAV_BY_ROLE = {
   ADMIN: [
-    { label: 'Dashboard',        to: '/admin/dashboard',         icon: Squares2X2Icon           },
-    { label: 'Users',            to: '/admin/users',             icon: UsersIcon                },
-    { label: 'Donations',        to: '/admin/donations',         icon: ClipboardDocumentListIcon},
-    { label: 'Claims',           to: '/admin/claims',            icon: HeartIcon                },
-    { label: 'Deliveries',       to: '/admin/deliveries',        icon: TruckIcon                },
-    { label: 'Profile Requests', to: '/admin/profile-requests',  icon: IdentificationIcon       },
-    { label: 'Categories',       to: '/admin/categories',        icon: TagIcon                  },
-    { label: 'Reports',          to: '/admin/reports',           icon: DocumentChartBarIcon     },
-    { label: 'Messages',         to: '/admin/messages',          icon: ChatBubbleLeftRightIcon  },
-    { label: 'Notifications',    to: '/admin/notifications',     icon: BellIcon                 },
-    { label: 'Profile',          to: '/admin/profile',           icon: UserCircleIcon           },
+    { label: 'Dashboard',        to: '/admin/dashboard',        icon: Squares2X2Icon           },
+    { label: 'Users',            to: '/admin/users',            icon: UsersIcon                },
+    { label: 'Donations',        to: '/admin/donations',        icon: ClipboardDocumentListIcon},
+    { label: 'Claims',           to: '/admin/claims',           icon: HeartIcon                },
+    { label: 'Deliveries',       to: '/admin/deliveries',       icon: TruckIcon                },
+    { label: 'Profile Requests', to: '/admin/profile-requests', icon: IdentificationIcon       },
+    { label: 'Categories',       to: '/admin/categories',       icon: TagIcon                  },
+    { label: 'Reports',          to: '/admin/reports',          icon: DocumentChartBarIcon     },
+    { label: 'Messages',         to: '/admin/messages',         icon: ChatBubbleLeftRightIcon  },
+    { label: 'Notifications',    to: '/admin/notifications',    icon: BellIcon                 },
+    { label: 'Profile',          to: '/admin/profile',          icon: UserCircleIcon           },
   ],
   DONOR: [
-    { label: 'Dashboard',    to: '/donor/dashboard',      icon: Squares2X2Icon           },
-    { label: 'Add Donation', to: '/donor/donations/new',  icon: PlusCircleIcon           },
-    { label: 'My Donations', to: '/donor/donations',      icon: ClipboardDocumentListIcon},
-    { label: 'Notifications',to: '/donor/notifications',  icon: BellIcon                 },
-    { label: 'Profile',      to: '/donor/profile',        icon: UserCircleIcon           },
+    { label: 'Dashboard',         to: '/donor/dashboard',          icon: Squares2X2Icon           },
+    { label: 'Add Donation',      to: '/donor/donations/new',      icon: PlusCircleIcon           },
+    { label: 'My Donations',      to: '/donor/donations',          icon: ClipboardDocumentListIcon},
+    { label: 'Direct Donations',  to: '/donor/direct-donations',   icon: GiftIcon                 },
+    { label: 'Notifications',     to: '/donor/notifications',      icon: BellIcon                 },
+    { label: 'Profile',           to: '/donor/profile',            icon: UserCircleIcon           },
   ],
   NGO: [
-    { label: 'Dashboard',    to: '/ngo/dashboard',        icon: Squares2X2Icon           },
-    { label: 'Find Food',    to: '/ngo/browse',           icon: MagnifyingGlassIcon      },
-    { label: 'My Claims',    to: '/ngo/claims',           icon: ClipboardDocumentListIcon},
-    { label: 'Notifications',to: '/ngo/notifications',    icon: BellIcon                 },
-    { label: 'Profile',      to: '/ngo/profile',          icon: UserCircleIcon           },
+    { label: 'Dashboard',    to: '/ngo/dashboard',       icon: Squares2X2Icon           },
+    { label: 'Find Food',    to: '/ngo/browse',          icon: MagnifyingGlassIcon      },
+    { label: 'My Claims',    to: '/ngo/claims',          icon: ClipboardDocumentListIcon},
+    { label: 'Notifications',to: '/ngo/notifications',   icon: BellIcon                 },
+    { label: 'Profile',      to: '/ngo/profile',         icon: UserCircleIcon           },
   ],
   DELIVERY_AGENT: [
-    { label: 'Dashboard',    to: '/agent/dashboard',      icon: Squares2X2Icon           },
-    { label: 'Pickups',      to: '/agent/deliveries',     icon: TruckIcon                },
-    { label: 'History',      to: '/agent/history',        icon: ChartBarIcon             },
-    { label: 'Notifications',to: '/agent/notifications',  icon: BellIcon                 },
-    { label: 'Profile',      to: '/agent/profile',        icon: UserCircleIcon           },
+    { label: 'Dashboard',    to: '/agent/dashboard',     icon: Squares2X2Icon           },
+    { label: 'Pickups',      to: '/agent/deliveries',    icon: TruckIcon                },
+    { label: 'History',      to: '/agent/history',       icon: ChartBarIcon             },
+    { label: 'Notifications',to: '/agent/notifications', icon: BellIcon                 },
+    { label: 'Profile',      to: '/agent/profile',       icon: UserCircleIcon           },
   ],
+  RECEIVER: [
+    { label: 'Dashboard',        to: '/receiver/dashboard',    icon: Squares2X2Icon     },
+    { label: 'Browse Donations', to: '/receiver/browse',       icon: MagnifyingGlassIcon},
+    { label: 'My Received',      to: '/receiver/my-received',  icon: GiftIcon           },
+    { label: 'Messages',         to: '/receiver/messages',     icon: ChatBubbleLeftRightIcon},
+    { label: 'Notifications',    to: '/receiver/notifications',icon: BellIcon           },
+    { label: 'Profile',          to: '/receiver/profile',      icon: UserCircleIcon     },
+  ],
+};
+
+const ROLE_LABELS = {
+  ADMIN:          'Administrator',
+  DONOR:          'Food Donor',
+  NGO:            'NGO Partner',
+  DELIVERY_AGENT: 'Delivery Agent',
+  RECEIVER:       'Receiver',
 };
 
 export default function DashboardSidebar({ open, onClose }) {
   const { primaryRole, user, logout } = useAuth();
   const navigate = useNavigate();
-  const links = NAV_BY_ROLE[primaryRole] || [];
+  const links    = NAV_BY_ROLE[primaryRole] || [];
+  const roleLabel = ROLE_LABELS[primaryRole] || primaryRole;
 
-  const roleLabel = {
-    ADMIN:          'Administrator',
-    DONOR:          'Food Donor',
-    NGO:            'NGO Partner',
-    DELIVERY_AGENT: 'Delivery Agent',
-  }[primaryRole] || primaryRole;
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
+  const handleLogout = async () => { await logout(); navigate('/'); };
 
   return (
     <>
-      {/* Mobile overlay */}
       {open && (
-        <div
-          className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-30 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-30 lg:hidden" onClick={onClose} />
       )}
-
-      <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 z-40 flex flex-col
-          transition-transform duration-300
-          ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}
-        style={{
-          background: 'linear-gradient(180deg, #0c4a6e 0%, #082f49 100%)',
-          boxShadow: '4px 0 24px rgba(0,0,0,0.15)',
-        }}
+      <aside className={`fixed lg:sticky top-0 left-0 h-screen w-64 z-40 flex flex-col transition-transform duration-300
+          ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        style={{ background: 'linear-gradient(180deg, #0c4a6e 0%, #082f49 100%)', boxShadow: '4px 0 24px rgba(0,0,0,0.15)' }}
       >
         {/* Logo */}
         <div className="h-16 flex items-center gap-2.5 px-5 border-b border-white/10 shrink-0">
@@ -96,16 +93,11 @@ export default function DashboardSidebar({ open, onClose }) {
         {/* Nav Links */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
           {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              onClick={onClose}
+            <NavLink key={link.to} to={link.to} onClick={onClose}
               end={link.to.endsWith('dashboard')}
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-              }
+              className={({ isActive }) => `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
             >
-              <link.icon className="w-4.5 h-4.5 shrink-0" style={{ width: 18, height: 18 }} />
+              <link.icon style={{ width: 18, height: 18 }} className="shrink-0" />
               <span>{link.label}</span>
             </NavLink>
           ))}
@@ -124,10 +116,8 @@ export default function DashboardSidebar({ open, onClose }) {
               <p className="text-white/40 text-xs truncate">{user?.email}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="sidebar-link w-full text-white/50 hover:text-white hover:bg-white/10"
-          >
+          <button onClick={handleLogout}
+            className="sidebar-link w-full text-white/50 hover:text-white hover:bg-white/10">
             <ArrowLeftOnRectangleIcon style={{ width: 18, height: 18 }} className="shrink-0" />
             Sign Out
           </button>

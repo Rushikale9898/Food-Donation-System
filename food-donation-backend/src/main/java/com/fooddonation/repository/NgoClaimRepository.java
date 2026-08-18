@@ -29,6 +29,9 @@ public interface NgoClaimRepository extends JpaRepository<NgoClaim, Long> {
 
 	long countByStatus(ClaimStatus status);
 
+	// ← needed for NGO dashboard breakdown
+	long countByNgoIdAndStatus(Long ngoId, ClaimStatus status);
+
 	@Query("SELECT c FROM NgoClaim c WHERE c.ngo.id = :ngoId AND c.status = :status")
 	Page<NgoClaim> findByNgoIdAndStatus(@Param("ngoId") Long ngoId, @Param("status") ClaimStatus status,
 			Pageable pageable);
