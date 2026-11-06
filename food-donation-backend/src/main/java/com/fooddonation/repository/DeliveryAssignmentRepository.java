@@ -1,5 +1,6 @@
 package com.fooddonation.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,9 +29,13 @@ public interface DeliveryAssignmentRepository extends JpaRepository<DeliveryAssi
 
 	long countByStatus(AssignmentStatus status);
 
-	@Query("SELECT a FROM DeliveryAssignment a WHERE a.status IN :statuses")
-	Page<DeliveryAssignment> findByStatuses(@Param("statuses") List<AssignmentStatus> statuses, Pageable pageable);
-
 	@Query("SELECT COUNT(a) FROM DeliveryAssignment a WHERE a.agent.id = :agentId AND a.status = :status")
 	long countByAgentIdAndStatus(@Param("agentId") Long agentId, @Param("status") AssignmentStatus status);
+
+	// ← NEW: needed for today's deliveries on agent dashboard
+	@Query("SELECT COUNT(a) FROM DeliveryAssignment a WHERE a.agent.id = :agentId AND a.deliveredAt >= :after")
+	long countByAgentIdAndDeliveredAtAfter(@Param("agentId") Long agentId, @Param("after") LocalDateTime after);
+
+	@Query("SELECT a FROM DeliveryAssignment a WHERE a.status IN :statuses")
+	Page<DeliveryAssignment> findByStatuses(@Param("statuses") List<AssignmentStatus> statuses, Pageable pageable);
 }

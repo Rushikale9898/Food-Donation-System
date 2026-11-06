@@ -12,4 +12,6 @@ public interface DashboardService {
 
 	DashboardStatsResponse getAgentDashboard(String agentEmail);
 
+	DashboardStatsResponse getReceiverDashboard(String receiverEmail);
+
 }

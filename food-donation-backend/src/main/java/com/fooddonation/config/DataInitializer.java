@@ -7,17 +7,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fooddonation.entity.DonorProfile;
-import com.fooddonation.entity.NgoProfile;
-import com.fooddonation.entity.Role;
-import com.fooddonation.entity.User;
-import com.fooddonation.enums.DonorType;
-import com.fooddonation.enums.UserStatus;
-import com.fooddonation.repository.DonorProfileRepository;
-import com.fooddonation.repository.FoodCategoryRepository;
-import com.fooddonation.repository.NgoProfileRepository;
-import com.fooddonation.repository.RoleRepository;
-import com.fooddonation.repository.UserRepository;
+import com.fooddonation.entity.*;
+import com.fooddonation.enums.*;
+import com.fooddonation.repository.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +24,7 @@ public class DataInitializer implements CommandLineRunner {
 	private final FoodCategoryRepository categoryRepository;
 	private final DonorProfileRepository donorProfileRepository;
 	private final NgoProfileRepository ngoProfileRepository;
+	private final ReceiverProfileRepository receiverProfileRepository;
 	private final PasswordEncoder passwordEncoder;
 
 	@Override
@@ -50,6 +43,7 @@ public class DataInitializer implements CommandLineRunner {
 		createRoleIfMissing(Role.DONOR, "Food donor - restaurants, caterers, individuals");
 		createRoleIfMissing(Role.NGO, "NGO that claims and distributes donated food");
 		createRoleIfMissing(Role.DELIVERY_AGENT, "Volunteer delivery agent");
+		createRoleIfMissing(Role.RECEIVER, "Individual receiver of small direct food donations");
 	}
 
 	private void createRoleIfMissing(String name, String description) {
@@ -95,45 +89,49 @@ public class DataInitializer implements CommandLineRunner {
 		log.info("  Admin user created  →  admin@fooddonation.com / Admin@123");
 	}
 
-	// SAMPLE USERS (DONOR + NGO)
+	// SAMPLE USERS (DONOR + NGO + RECEIVER)
 	private void seedSampleUsers() {
-		seedDonor();
-		seedNgo();
-	}
 
-	private void seedDonor() {
-		String email = "sharma.restaurant@gmail.com";
-		if (userRepository.existsByEmail(email))
-			return;
+		// Donor
+		String donorEmail = "sharma.restaurant@gmail.com";
+		if (!userRepository.existsByEmail(donorEmail)) {
+			Role donorRole = roleRepository.findByName(Role.DONOR).orElseThrow();
+			User donor = userRepository.save(User.builder().fullName("Sharma Restaurant").email(donorEmail)
+					.phone("9876543210").password(passwordEncoder.encode("Donor@123")).status(UserStatus.ACTIVE)
+					.emailVerified(true).city("Pune").state("Maharashtra").address("MG Road, Camp Area")
+					.pincode("411001").roles(Set.of(donorRole)).build());
+			donorProfileRepository.save(DonorProfile.builder().user(donor).donorType(DonorType.RESTAURANT)
+					.organization("Sharma Restaurant").fssaiNumber("FSSAI12345678").build());
+			log.info("  Sample Donor created  →  {} / Donor@123", donorEmail);
+		}
 
-		Role donorRole = roleRepository.findByName(Role.DONOR).orElseThrow();
-		User donor = User.builder().fullName("Sharma Restaurant").email(email).phone("9876543210")
-				.password(passwordEncoder.encode("Donor@123")).status(UserStatus.ACTIVE).emailVerified(true)
-				.city("Pune").state("Maharashtra").address("MG Road, Camp Area").pincode("411001")
-				.roles(Set.of(donorRole)).build();
-		User saved = userRepository.save(donor);
+		// NGO
+		String ngoEmail = "helpinghands@ngo.org";
+		if (!userRepository.existsByEmail(ngoEmail)) {
+			Role ngoRole = roleRepository.findByName(Role.NGO).orElseThrow();
+			User ngo = userRepository.save(User.builder().fullName("Helping Hands NGO").email(ngoEmail)
+					.phone("9123456780").password(passwordEncoder.encode("NGO@12345")).status(UserStatus.ACTIVE)
+					.emailVerified(true).city("Pune").state("Maharashtra").address("Koregaon Park, Pune")
+					.roles(Set.of(ngoRole)).build());
+			ngoProfileRepository.save(NgoProfile.builder().user(ngo).organizationName("Helping Hands Foundation")
+					.registrationNumber("NGO/MH/2018/123456")
+					.description("We work to feed the underprivileged in Pune city").foodCapacity(500)
+					.serviceArea("Pune,Pimpri-Chinchwad").verified(true).build());
+			log.info("  Sample NGO created    →  {} / NGO@12345", ngoEmail);
+		}
 
-		donorProfileRepository.save(DonorProfile.builder().user(saved).donorType(DonorType.RESTAURANT)
-				.organization("Sharma Restaurant").fssaiNumber("FSSAI12345678").build());
-		log.info("  Sample Donor created  →  {} / Donor@123", email);
-	}
-
-	private void seedNgo() {
-		String email = "helpinghands@ngo.org";
-		if (userRepository.existsByEmail(email))
-			return;
-
-		Role ngoRole = roleRepository.findByName(Role.NGO).orElseThrow();
-		User ngo = User.builder().fullName("Helping Hands NGO").email(email).phone("9123456780")
-				.password(passwordEncoder.encode("NGO@12345")).status(UserStatus.ACTIVE).emailVerified(true)
-				.city("Pune").state("Maharashtra").address("Koregaon Park, Pune").roles(Set.of(ngoRole)).build();
-		User saved = userRepository.save(ngo);
-
-		ngoProfileRepository.save(NgoProfile.builder().user(saved).organizationName("Helping Hands Foundation")
-				.registrationNumber("NGO/MH/2018/123456")
-				.description("We work to feed the underprivileged in Pune city").foodCapacity(500)
-				.serviceArea("Pune,Pimpri-Chinchwad").verified(true).build());
-		log.info("  Sample NGO created    →  {} / NGO@12345", email);
+		// Receiver
+		String receiverEmail = "rahul.receiver@gmail.com";
+		if (!userRepository.existsByEmail(receiverEmail)) {
+			Role receiverRole = roleRepository.findByName(Role.RECEIVER).orElseThrow();
+			User receiver = userRepository.save(User.builder().fullName("Rahul Kumar").email(receiverEmail)
+					.phone("9988776655").password(passwordEncoder.encode("Receiver@123")).status(UserStatus.ACTIVE)
+					.emailVerified(true).city("Pune").state("Maharashtra").address("Hadapsar, Pune")
+					.roles(Set.of(receiverRole)).build());
+			receiverProfileRepository.save(ReceiverProfile.builder().user(receiver).receiverType(ReceiverType.FAMILY)
+					.familySize(4).specialNeeds("No non-veg, nut allergy").isVerified(true).build());
+			log.info("  Sample Receiver created →  {} / Receiver@123", receiverEmail);
+		}
 	}
 
 }

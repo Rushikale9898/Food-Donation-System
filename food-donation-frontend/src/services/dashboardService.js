@@ -1,16 +1,29 @@
 import apiClient from './apiClient';
 
 const dashboardService = {
-  async getDonorDashboard() {
+
+  getAdminDashboard: async () => {
+    const { data } = await apiClient.get('/dashboard/admin');
+    return data.data;
+  },
+
+  getDonorDashboard: async () => {
     const { data } = await apiClient.get('/dashboard/donor');
     return data.data;
   },
-  async getNgoDashboard() {
+
+  getNgoDashboard: async () => {
     const { data } = await apiClient.get('/dashboard/ngo');
     return data.data;
   },
-  async getAgentDashboard() {
+
+  getAgentDashboard: async () => {
     const { data } = await apiClient.get('/dashboard/agent');
+    return data.data;
+  },
+
+  getReceiverDashboard: async () => {
+    const { data } = await apiClient.get('/dashboard/receiver');
     return data.data;
   },
 };
